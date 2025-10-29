@@ -75,10 +75,10 @@
 
   /* Progress */
   .progress{
-    display:flex; align-items:center; gap:12px; margin-bottom:18px;
+    display:flex; align-items:center; gap:12px; margin-bottom:18px; flex-wrap:wrap;
   }
   .progress__bar{
-    flex:1; height:10px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; border:1px solid var(--border)
+    flex:1 1 60%; height:10px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; border:1px solid var(--border)
   }
   .progress__bar > span{
     display:block; height:100%; width:0%;
@@ -86,20 +86,24 @@
     transition: width .35s ease;
   }
   .progress__count{font-variant-numeric:tabular-nums; color:var(--muted)}
+  .score_now{margin-left:auto; color:var(--muted)}
 
   /* Question */
   .question{padding:18px; border:1px solid var(--border); border-radius:14px; margin-bottom:14px; background: rgba(255,255,255,.015)}
   .q-title{font-weight:700; margin:0 0 10px}
   .options{margin-top:8px}
-  .options label{display:block; padding:10px 12px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; cursor:pointer; background:rgba(255,255,255,.02)}
+  .options label{display:block; padding:10px 12px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; cursor:pointer; background:rgba(255,255,255,.02); transition: background .2s, border-color .2s}
   .options input{margin-right:8px}
-  .inline-input{width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:transparent; color:var(--text)}
+  .options label.correct{border-color: var(--success); background: rgba(52,211,153,.12)}
+  .options label.wrong{border-color: var(--danger); background: rgba(248,113,113,.12)}
   .match-row{display:flex; gap:10px; margin-bottom:8px}
   .match-row select{flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:transparent; color:var(--text)}
+  .match-row.correct select{border-color: var(--success); background: rgba(52,211,153,.12)}
+  .match-row.wrong select{border-color: var(--danger); background: rgba(248,113,113,.12)}
 
-  /* Hint */
-  .hint {display:none; margin-top:8px; padding:10px 12px; border-left:4px solid var(--accent); background: rgba(245,158,11,.10); border-radius:8px}
-  .hint-btn{margin-top:8px;}
+  /* Hint & Explanation */
+  .hint, .explanation {display:none; margin-top:10px; padding:10px 12px; border-left:4px solid var(--accent); background: rgba(245,158,11,.10); border-radius:8px}
+  .feedback{display:none; margin-top:10px; padding:10px 12px; border-left:4px solid var(--brand); background: rgba(96,165,250,.10); border-radius:8px; font-weight:700}
 
   /* Buttons */
   .btn{
@@ -107,7 +111,7 @@
     background:linear-gradient(90deg, var(--brand), var(--brand-2)); box-shadow: var(--shadow);
   }
   .btn.secondary{background:transparent; color:var(--text); border:1px solid var(--border); box-shadow:none}
-  .actions{display:flex; gap:10px; justify-content:flex-end; margin-top:18px}
+  .actions{display:flex; gap:10px; justify-content:space-between; margin-top:18px; flex-wrap:wrap}
 
   /* Results */
   #results{display:none; margin-top:18px; padding:0}
@@ -144,9 +148,9 @@
       <h1>Humans + AI: Who Does What?</h1>
       <p class="tagline">A quick, playful quiz about collaboration, judgment, and when to verify.</p>
       <div class="hero__badges">
-        <span class="badge">Runs offline</span>
-        <span class="badge">No libraries</span>
-        <span class="badge">Keyboard friendly</span>
+        <!-- <span class="badge">One-by-one flow</span>
+        <span class="badge">Immediate feedback</span>
+        <span class="badge">Runs offline</span> -->
       </div>
     </div>
   </div>
@@ -156,15 +160,22 @@
   <section class="card" aria-labelledby="quiz-title">
     <div class="progress" role="status" aria-live="polite">
       <div class="progress__bar" aria-hidden="true"><span id="progressBar"></span></div>
-      <div class="progress__count"><span id="progressCount">0</span>/<span id="totalCount">0</span></div>
+      <div class="progress__count">
+        <span id="progressCount">0</span>/<span id="totalCount">0</span>
+        <span class="score_now">Score: <strong id="scoreNow">0</strong></span>
+      </div>
     </div>
 
     <h2 id="quiz-title" class="visually-hidden">Quiz</h2>
     <div id="quiz"></div>
 
     <div class="actions">
-      <button id="restartBtn" class="btn secondary" type="button">Restart</button>
-      <button id="submitBtn" class="btn" type="button">Submit Answers</button>
+      <button id="hintBtn" class="btn secondary" type="button">Show Hint</button>
+      <div style="display:flex; gap:10px">
+        <button id="restartBtn" class="btn secondary" type="button">Restart</button>
+        <button id="checkBtn" class="btn" type="button">Check Answer</button>
+        <button id="nextBtn" class="btn" type="button" style="display:none">Next Question</button>
+      </div>
     </div>
 
     <div id="results" class="card">
@@ -180,197 +191,304 @@
 </main>
 
 <footer>
-  <small>&copy; <span id="year"></span> Humans + AI Quiz. Built with vanilla HTML/CSS/JS.</small>
+  <small>&copy; <span id="year"></span> Built with a custom GPT, reviewed by a human.</small>
 </footer>
 
 <script>
-  // ======== QUIZ DATA (replaced with final 5-question set) =========
+  // ======== QUIZ DATA (replace/extend; mcq/tf/match only) =========
   const quizData = [
     {
       id: 1, type: "mcq",
-      prompt: "Which task is AI most reliable for?",
-      options: ["An empathy interview", "Analyzing large data sets", "Setting workplace policies", "Negotiating conflicts"],
-      correct: "Analyzing large data sets",
-      hint: "Think about scale and speed.",
-      explanation: "AI can rapidly find trends across huge datasets; humans interpret meaning and implications."
+      prompt: "Which task is AI generally *better* at than humans?",
+      options: ["Summarizing long reports quickly", "Comforting someone in a crisis", "Setting company values", "Negotiating team conflicts"],
+      correct: "Summarizing long reports quickly",
+      hint: "Think about scale and repetition.",
+      explanation: "AI excels at high-volume, pattern-based tasks like summarizing; humans handle nuance and empathy."
     },
     {
       id: 2, type: "tf",
-      prompt: "Humans should always follow AI’s advice without question.",
+      prompt: "If an AI tool gives a confident answer, you can skip verification.",
       options: ["True","False"],
       correct: "False",
-      hint: "What role does human judgment play?",
-      explanation: "Human oversight provides ethics, context, and safety checks; AI outputs still require verification."
+      hint: "Who is accountable?",
+      explanation: "Confidence ≠ correctness. Humans must verify important outputs before acting."
     },
     {
-      id: 3, type: "mcq",
-      prompt: "When drafting a report, where can AI best assist?",
-      options: ["Generating a first draft or summary", "Making final approval decisions", "Assigning team roles", "Deciding ethical trade-offs"],
-      correct: "Generating a first draft or summary",
-      hint: "Consider what saves the most time.",
-      explanation: "AI accelerates drafting and summarizing; humans refine accuracy, tone, and context."
+      id: 3, type: "match",
+      prompt: "Match each task to who should lead it.",
+      matchPairs: [
+        {left:"Spot anomalies in 50,000 transactions", rightOptions:["Human","AI","Both"], correct:"AI"},
+        {left:"Decide on a refund for an angry customer", rightOptions:["Human","AI","Both"], correct:"Human"},
+        {left:"Check key facts before publishing", rightOptions:["Human","AI","Both"], correct:"Both"}
+      ],
+      hint: "Consider judgment vs. scale.",
+      explanation: "AI scans large datasets; humans apply judgment for customer outcomes; both share verification."
     },
     {
-      id: 4, type: "tf",
-      prompt: "AI tools can help uncover bias, but humans must decide what is fair.",
+      id: 4, type: "mcq",
+      prompt: "What’s the best human + AI workflow for a policy memo?",
+      options: [
+        "AI drafts → Human edits/verifies → AI polishes grammar → Human signs off",
+        "Human writes from scratch and never uses AI",
+        "AI writes and publishes automatically",
+        "Human drafts → AI publishes without review"
+      ],
+      correct: "AI drafts → Human edits/verifies → AI polishes grammar → Human signs off",
+      hint: "Put verification before final sign-off.",
+      explanation: "A loop of draft → verify → polish → approve keeps speed while protecting quality and accountability."
+    },
+    {
+      id: 5, type: "tf",
+      prompt: "Sharing private customer data with a public AI tool may create privacy risks.",
       options: ["True","False"],
       correct: "True",
-      hint: "Who defines fairness?",
-      explanation: "AI can surface patterns; fairness judgments and accountability rest with people."
+      hint: "Think: confidentiality and consent.",
+      explanation: "Public tools may retain or learn from data; follow privacy rules and use approved channels."
     },
     {
-      id: 5, type: "match",
-      prompt: "Match each activity to who should lead it.",
-      matchPairs: [
-        {left:"Summarizing news", rightOptions:["Human","AI","Both"], correct:"AI"},
-        {left:"Creating empathy-driven messaging", rightOptions:["Human","AI","Both"], correct:"Human"},
-        {left:"Verifying sources", rightOptions:["Human","AI","Both"], correct:"Both"}
+      id: 6, type: "mcq",
+      prompt: "Which prompt is most likely to get a useful result?",
+      options: [
+        "You are a project assistant. Goal: draft a 200-word summary for non-experts. Use bullet points, cite 2 sources, neutral tone.",
+        "Summarize this.",
+        "Write something good.",
+        "Give me info quickly."
       ],
-      hint: "Consider logic and scale vs. empathy and context.",
-      explanation: "Best results: AI handles scale, humans handle tone and values, and both verify important facts."
+      correct: "You are a project assistant. Goal: draft a 200-word summary for non-experts. Use bullet points, cite 2 sources, neutral tone.",
+      hint: "Context + goal + format = better output.",
+      explanation: "Clear role, audience, constraints, and format guide the model and reduce rework."
+    },
+    {
+      id: 7, type: "match",
+      prompt: "Match the scenario to who should lead.",
+      matchPairs: [
+        {left:"Offer a rough translation of a simple email", rightOptions:["Human","AI","Both"], correct:"AI"},
+        {left:"Provide a medical diagnosis", rightOptions:["Human","AI","Both"], correct:"Human"},
+        {left:"Generate options, human chooses", rightOptions:["Human","AI","Both"], correct:"Both"}
+      ],
+      hint: "Safety-critical vs. low-risk tasks.",
+      explanation: "AI is fine for low-risk drafting; humans lead in high-stakes calls; collaboration shines for option-generation + judgment."
+    },
+    {
+      id: 8, type: "tf",
+      prompt: "“AI hallucinations” means the system may produce invented facts that sound plausible.",
+      options: ["True","False"],
+      correct: "True",
+      hint: "Listen for “plausible but wrong.”",
+      explanation: "Hallucinations are fabricated details; humans must cross-check with reliable sources."
     }
   ];
 
-  // ======== RENDERING ========
+  // ======== STATE ========
+  let current = 0;
+  let score = 0;
+  const total = quizData.length;
+
+  // ======== HELPERS ========
   const $ = (sel, el=document) => el.querySelector(sel);
   const $$ = (sel, el=document) => [...el.querySelectorAll(sel)];
+  function normalize(s){ return String(s).trim().toLowerCase(); }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+  // ======== ELEMENTS ========
   const quizEl = $("#quiz");
   const totalCountEl = $("#totalCount");
   const progressCountEl = $("#progressCount");
   const progressBar = $("#progressBar");
+  const scoreNowEl = $("#scoreNow");
+  const hintBtn = $("#hintBtn");
+  const checkBtn = $("#checkBtn");
+  const nextBtn = $("#nextBtn");
+  const restartBtn = $("#restartBtn");
   const resultsEl = $("#results");
   const scoreRing = $("#scoreRing");
   const scorePct = $("#scorePct");
   const bandMsg = $("#bandMsg");
 
-  totalCountEl.textContent = quizData.length;
+  totalCountEl.textContent = total;
+  $("#year").textContent = new Date().getFullYear();
 
-  function render(){
-    quizEl.innerHTML = "";
-    quizData.forEach((q, idx) => {
-      const card = document.createElement("div");
-      card.className = "question";
-      card.setAttribute("data-id", q.id);
+  // ======== RENDER ONE QUESTION ========
+  function renderQuestion(){
+    const q = quizData[current];
+    quizEl.innerHTML = ""; // clear
 
-      const title = document.createElement("p");
-      title.className = "q-title";
-      title.innerHTML = `<strong>Q${idx+1}.</strong> ${q.prompt}`;
-      card.appendChild(title);
+    const card = document.createElement("div");
+    card.className = "question";
 
-      // Render type
-      if(q.type === "mcq" || q.type === "tf"){
-        const wrap = document.createElement("div");
-        wrap.className = "options";
-        (q.options || []).forEach(opt => {
-          const id = `q${idx}-${cssSafe(opt)}`;
-          const label = document.createElement("label");
-          label.setAttribute("for", id);
-          label.innerHTML = `<input id="${id}" type="radio" name="q${idx}" value="${escapeHtml(opt)}"> ${escapeHtml(opt)}`;
-          wrap.appendChild(label);
+    const title = document.createElement("p");
+    title.className = "q-title";
+    title.innerHTML = `<strong>Q${current+1} of ${total}.</strong> ${q.prompt}`;
+    card.appendChild(title);
+
+    if(q.type === "mcq" || q.type === "tf"){
+      const wrap = document.createElement("div");
+      wrap.className = "options";
+      (q.options || []).forEach(opt => {
+        const id = `q${current}-${opt.toLowerCase().replace(/[^a-z0-9]+/g,'-')}`;
+        const label = document.createElement("label");
+        label.setAttribute("for", id);
+        label.innerHTML = `<input id="${id}" type="radio" name="q${current}" value="${escapeHtml(opt)}"> ${escapeHtml(opt)}`;
+        wrap.appendChild(label);
+      });
+      card.appendChild(wrap);
+    }
+    else if(q.type === "match"){
+      (q.matchPairs || []).forEach((pair, j) => {
+        const row = document.createElement("div");
+        row.className = "match-row";
+        const left = document.createElement("div");
+        left.textContent = pair.left;
+        left.style.minWidth = "40%";
+        const sel = document.createElement("select");
+        sel.name = `q${current}-m${j}`;
+        (pair.rightOptions || ["Human","AI","Both"]).forEach(opt => {
+          const op = document.createElement("option");
+          op.value = opt; op.textContent = opt;
+          sel.appendChild(op);
         });
-        card.appendChild(wrap);
-      }
-      else if(q.type === "match"){
-        (q.matchPairs || []).forEach((pair, j) => {
-          const row = document.createElement("div");
-          row.className = "match-row";
-          const left = document.createElement("div");
-          left.textContent = pair.left;
-          left.style.minWidth = "40%";
-          const sel = document.createElement("select");
-          sel.name = `q${idx}-m${j}`;
-          (pair.rightOptions || ["Human","AI","Both"]).forEach(opt => {
-            const op = document.createElement("option");
-            op.value = opt; op.textContent = opt;
-            sel.appendChild(op);
-          });
-          row.appendChild(left); row.appendChild(sel);
-          card.appendChild(row);
-        });
-      }
+        row.appendChild(left); row.appendChild(sel);
+        card.appendChild(row);
+      });
+    }
 
-      // Hint
-      const hintBtn = document.createElement("button");
-      hintBtn.className = "btn secondary hint-btn";
-      hintBtn.type = "button";
-      hintBtn.textContent = "Show Hint";
-      const hint = document.createElement("div");
-      hint.className = "hint";
-      hint.textContent = q.hint || "Consider the strengths of humans and AI.";
-      hintBtn.addEventListener("click", () => hint.style.display = "block");
-      card.appendChild(hintBtn);
-      card.appendChild(hint);
+    // Hint + Explanation + Feedback containers
+    const hint = document.createElement("div");
+    hint.className = "hint";
+    hint.id = "hintBox";
+    hint.textContent = q.hint || "Consider the strengths of humans and AI.";
 
-      quizEl.appendChild(card);
-    });
+    const feedback = document.createElement("div");
+    feedback.className = "feedback";
+    feedback.id = "feedbackBox";
+
+    const explanation = document.createElement("div");
+    explanation.className = "explanation";
+    explanation.id = "explainBox";
+    explanation.textContent = "Explanation: " + (q.explanation || "");
+
+    card.appendChild(hint);
+    card.appendChild(feedback);
+    card.appendChild(explanation);
+
+    quizEl.appendChild(card);
+
+    // Reset buttons for this question
+    hint.style.display = "none";
+    feedback.style.display = "none";
+    explanation.style.display = "none";
+    checkBtn.style.display = "inline-block";
+    nextBtn.style.display = "none";
 
     updateProgress();
   }
 
-  function cssSafe(s){ return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-'); }
-  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-
+  // ======== PROGRESS ========
   function updateProgress(){
-    const answered = getAnsweredCount();
-    progressCountEl.textContent = answered;
-    const pct = quizData.length ? Math.round(100 * answered / quizData.length) : 0;
+    progressCountEl.textContent = current;
+    const pct = total ? Math.round(100 * current / total) : 0;
     progressBar.style.width = pct + "%";
+    scoreNowEl.textContent = score;
   }
 
-  function getAnsweredCount(){
-    let count = 0;
-    quizData.forEach((q, idx) => {
-      if(q.type === "mcq" || q.type === "tf"){
-        const checked = $(`input[name="q${idx}"]:checked`);
-        if(checked) count++;
-      } else if(q.type === "match"){
-        const pairs = (q.matchPairs || []);
-        const ok = pairs.every((_, j) => !!$(`select[name="q${idx}-m${j}"]`).value);
-        if(ok) count++;
+  // ======== CHECK ANSWER WITH FEEDBACK ========
+  function checkAnswer(){
+    const q = quizData[current];
+    let correctNow = false;
+       let correctText = "";
+
+    if(q.type === "mcq" || q.type === "tf"){
+      const selected = document.querySelector(`input[name="q${current}"]:checked`);
+      if(!selected){ alert("Please select an answer first."); return; }
+      const labels = [...document.querySelectorAll(`label[for^="q${current}-"]`)];
+      labels.forEach(l => l.classList.remove("correct","wrong"));
+
+      correctText = q.correct;
+      labels.forEach(l => {
+        const input = document.getElementById(l.getAttribute("for"));
+        const val = input ? input.value : "";
+        if(normalize(val) === normalize(q.correct)){
+          l.classList.add("correct");
+        }
+      });
+
+      if(normalize(selected.value) === normalize(q.correct)){
+        correctNow = true;
+      } else {
+        const wrongLabel = document.querySelector(`label[for="${selected.id}"]`);
+        if(wrongLabel) wrongLabel.classList.add("wrong");
       }
-    });
-    return count;
+
+      // lock options
+      $$(`input[name="q${current}"]`).forEach(i => i.disabled = true);
+    } else if(q.type === "match"){
+      const pairs = (q.matchPairs || []);
+      let allRight = true;
+      pairs.forEach((pair, j) => {
+        const row = document.querySelector(`select[name="q${current}-m${j}"]`).closest(".match-row");
+        const sel = row.querySelector("select");
+        row.classList.remove("correct","wrong");
+        if(normalize(sel.value) === normalize(pair.correct)){
+          row.classList.add("correct");
+        } else {
+          row.classList.add("wrong");
+          allRight = false;
+        }
+        correctText += `${pair.left} → ${pair.correct}${j < pairs.length-1 ? "; " : ""}`;
+        sel.disabled = true;
+      });
+      correctNow = allRight;
+    }
+
+    if(correctNow) score++;
+
+    // Show feedback + explanation + toggle buttons
+    const fb = document.getElementById("feedbackBox");
+    fb.style.display = "block";
+    fb.textContent = correctNow ? "✅ Correct!" : `❌ Not quite. Correct answer: ${correctText}`;
+
+    const exp = document.getElementById("explainBox");
+    exp.style.display = "block";
+
+    checkBtn.style.display = "none";
+    nextBtn.style.display = "inline-block";
+    nextBtn.textContent = (current === total-1) ? "See Results" : "Next Question";
+
+    // Update live score
+    updateProgress();
   }
 
-  function normalize(s){ return String(s).trim().toLowerCase(); }
+  // ======== NEXT OR RESULTS ========
+  function nextStep(){
+    if(current < total-1){
+      current++;
+      renderQuestion();
+    }else{
+      showResults();
+    }
+  }
 
-  function grade(){
-    let correct = 0;
+  // ======== RESULTS ========
+  function showResults(){
+    quizEl.innerHTML = "";
+    $(".actions").style.display = "none";
+    resultsEl.style.display = "block";
 
-    quizData.forEach((q, idx) => {
-      if(q.type === "mcq" || q.type === "tf"){
-        const a = $(`input[name="q${idx}"]:checked`);
-        if(a && normalize(a.value) === normalize(q.correct)) correct++;
-      }
-      else if(q.type === "match"){
-        const pairs = (q.matchPairs || []);
-        const allRight = pairs.every((pair, j) => {
-          const sel = $(`select[name="q${idx}-m${j}"]`);
-          return normalize(sel.value) === normalize(pair.correct);
-        });
-        if(allRight) correct++;
-      }
-    });
-
-    const total = quizData.length;
-    const pct = total ? Math.round((correct/total)*100) : 0;
+    const pct = total ? Math.round((score/total)*100) : 0;
     const band = (pct>=80) ? "Great collaboration awareness!"
                : (pct>=50) ? "Good start—keep refining your human–AI judgment."
                : "Let’s practice when to verify, escalate, or co-create.";
 
-    // Update UI
-    resultsEl.style.display = "block";
     scoreRing.style.setProperty("--pct", pct);
     scorePct.textContent = pct + "%";
-    $("#scoreText").textContent = `Your Score: ${correct}/${total}`;
+    $("#scoreText").textContent = `Your Score: ${score}/${total}`;
     bandMsg.textContent = band;
 
-    // Simple celebratory effect
     confetti(pct >= 80 ? 60 : 20);
   }
 
+  // ======== CONFETTI ========
   function confetti(n=30){
-    const frag = document.createDocumentFragment();
     for(let i=0;i<n;i++){
       const s = document.createElement("span");
       const size = 6 + Math.random()*8;
@@ -393,27 +511,16 @@
     }
   }
 
-  // Events
-  $("#submitBtn").addEventListener("click", grade);
-  $("#restartBtn").addEventListener("click", () => {
-    // Reset all inputs
-    $$("input[type=radio]").forEach(i=> i.checked=false);
-    $$("select").forEach(s=> s.selectedIndex=0);
-    $$(".hint").forEach(h=> h.style.display="none");
-    resultsEl.style.display="none";
-    updateProgress();
-    window.scrollTo({top:0, behavior:"smooth"});
-  });
+  // ======== EVENTS ========
+  document.getElementById("hintBtn").addEventListener("click", () => { const h=document.getElementById("hintBox"); if(h) h.style.display="block"; });
+  document.getElementById("checkBtn").addEventListener("click", checkAnswer);
+  document.getElementById("nextBtn").addEventListener("click", nextStep);
+  document.getElementById("restartBtn").addEventListener("click", () => location.reload());
 
-  document.addEventListener("change", (e)=>{
-    if(e.target.matches("input, select")) updateProgress();
-  });
-
-  // Misc
-  $("#year").textContent = new Date().getFullYear();
-
-  // Initial render
-  render();
+  // Start
+  document.getElementById("totalCount").textContent = total;
+  document.getElementById("year").textContent = new Date().getFullYear();
+  renderQuestion();
 </script>
 
 </body>
