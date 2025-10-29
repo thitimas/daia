@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Humans + AI: Who Does What? — Quiz</title>
+
+<style>
+  :root{
+    --bg: #0f172a;
+    --bg-alt:#111827;
+    --card:#0b1222;
+    --text:#e5e7eb;
+    --muted:#9ca3af;
+    --brand:#60a5fa;
+    --brand-2:#22d3ee;
+    --accent:#f59e0b;
+    --success:#34d399;
+    --danger:#f87171;
+    --border:#1f2937;
+    --shadow: 0 10px 30px rgba(0,0,0,.35);
+    --radius: 16px;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f5f7fb; --bg-alt:#eef2ff; --card:#ffffff; --text:#0b1222;
+      --muted:#475569; --border:#e5e7eb; --shadow: 0 10px 30px rgba(2,6,23,.08);
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background: radial-gradient(1200px 600px at 10% -10%, rgba(96,165,250,.25), transparent 60%),
+                 radial-gradient(1000px 600px at 110% -20%, rgba(34,211,238,.25), transparent 60%),
+                 var(--bg);
+    color:var(--text); font: 16px/1.6 system-ui, -apple-system, Segoe UI, Roboto, Arial, Noto Sans, "Apple Color Emoji","Segoe UI Emoji";
+    min-height:100dvh;
+  }
+
+  /* Header */
+  header.hero{
+    position:relative; overflow:hidden;
+    padding: 36px 16px 28px;
+    background: linear-gradient(135deg, rgba(96,165,250,.15), rgba(34,211,238,.15));
+    border-bottom:1px solid var(--border);
+  }
+  .hero__inner{
+    max-width: 980px; margin:0 auto; display:flex; align-items:center; gap:20px;
+  }
+  .hero__logo{
+    width:84px; height:84px; border-radius:18px; overflow:hidden; flex:0 0 auto;
+    box-shadow: var(--shadow); border:1px solid var(--border); background: var(--card);
+    display:grid; place-items:center;
+  }
+  .hero__logo img{max-width:100%; max-height:100%; object-fit:contain}
+  .hero__text{flex:1 1 auto}
+  .eyebrow{
+    display:inline-block; padding:4px 10px; font-size:12px; letter-spacing:.08em; text-transform:uppercase;
+    border:1px solid var(--border); border-radius:999px; color:var(--muted); background:rgba(255,255,255,.02)
+  }
+  h1{margin:10px 0 6px; font-size: clamp(22px, 4vw, 32px); line-height:1.2}
+  .tagline{margin:0; color:var(--muted)}
+  .hero__badges{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap}
+  .badge{
+    padding:6px 10px; border-radius:999px; border:1px dashed var(--border);
+    color:var(--muted); font-size:12px; background:rgba(255,255,255,.02)
+  }
+
+  /* Shell */
+  .wrap{max-width:980px; margin:26px auto; padding:0 16px}
+  .card{
+    background:linear-gradient(180deg, rgba(255,255,255,.02), transparent 60%), var(--card);
+    border:1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding:22px;
+  }
+
+  /* Progress */
+  .progress{
+    display:flex; align-items:center; gap:12px; margin-bottom:18px;
+  }
+  .progress__bar{
+    flex:1; height:10px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; border:1px solid var(--border)
+  }
+  .progress__bar > span{
+    display:block; height:100%; width:0%;
+    background: linear-gradient(90deg, var(--brand), var(--brand-2));
+    transition: width .35s ease;
+  }
+  .progress__count{font-variant-numeric:tabular-nums; color:var(--muted)}
+
+  /* Question */
+  .question{padding:18px; border:1px solid var(--border); border-radius:14px; margin-bottom:14px; background: rgba(255,255,255,.015)}
+  .q-title{font-weight:700; margin:0 0 10px}
+  .options{margin-top:8px}
+  .options label{display:block; padding:10px 12px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; cursor:pointer; background:rgba(255,255,255,.02)}
+  .options input{margin-right:8px}
+  .inline-input{width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:transparent; color:var(--text)}
+  .match-row{display:flex; gap:10px; margin-bottom:8px}
+  .match-row select{flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:transparent; color:var(--text)}
+
+  /* Hint */
+  .hint {display:none; margin-top:8px; padding:10px 12px; border-left:4px solid var(--accent); background: rgba(245,158,11,.10); border-radius:8px}
+  .hint-btn{margin-top:8px;}
+
+  /* Buttons */
+  .btn{
+    appearance:none; border:none; border-radius:12px; padding:12px 16px; cursor:pointer; color:#0b1222; font-weight:700;
+    background:linear-gradient(90deg, var(--brand), var(--brand-2)); box-shadow: var(--shadow);
+  }
+  .btn.secondary{background:transparent; color:var(--text); border:1px solid var(--border); box-shadow:none}
+  .actions{display:flex; gap:10px; justify-content:flex-end; margin-top:18px}
+
+  /* Results */
+  #results{display:none; margin-top:18px; padding:0}
+  .result-card{display:grid; grid-template-columns: 160px 1fr; gap:18px; align-items:center; padding:22px}
+  @media (max-width:640px){ .result-card{grid-template-columns:1fr} }
+  .score-ring{
+    --pct: 0; /* 0..100 */
+    width: 160px; height:160px; border-radius:50%;
+    background:
+      radial-gradient(closest-side, var(--card) 80%, transparent 81% 100%),
+      conic-gradient(var(--success) calc(var(--pct)*1%), rgba(255,255,255,.08) 0);
+    display:grid; place-items:center; border:1px solid var(--border);
+  }
+  .score-ring span{font-size:28px; font-weight:800}
+  .result-msg{margin:0; color:var(--muted)}
+
+  /* Footer */
+  footer{margin:30px auto; max-width:980px; color:var(--muted); text-align:center; padding:12px}
+</style>
+</head>
+<body>
+
+<header class="hero" aria-label="Quiz Header">
+  <div class="hero__inner">
+    <div class="hero__logo" aria-hidden="true">
+      <!-- Replace with your logo if desired -->
+      <svg width="60" height="60" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.88L18.18 22 12 18.77 5.82 22 7 14.15 2 9.27l6.91-1.01L12 2z" stroke="#60a5fa" stroke-width="1.25"/>
+        <circle cx="12" cy="12" r="3.5" stroke="#22d3ee" stroke-width="1.25"/>
+      </svg>
+    </div>
+    <div class="hero__text">
+      <span class="eyebrow">Don’t AI Alone</span>
+      <h1>Humans + AI: Who Does What?</h1>
+      <p class="tagline">A quick, playful quiz about collaboration, judgment, and when to verify.</p>
+      <div class="hero__badges">
+        <span class="badge">Runs offline</span>
+        <span class="badge">No libraries</span>
+        <span class="badge">Keyboard friendly</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card" aria-labelledby="quiz-title">
+    <div class="progress" role="status" aria-live="polite">
+      <div class="progress__bar" aria-hidden="true"><span id="progressBar"></span></div>
+      <div class="progress__count"><span id="progressCount">0</span>/<span id="totalCount">0</span></div>
+    </div>
+
+    <h2 id="quiz-title" class="visually-hidden">Quiz</h2>
+    <div id="quiz"></div>
+
+    <div class="actions">
+      <button id="restartBtn" class="btn secondary" type="button">Restart</button>
+      <button id="submitBtn" class="btn" type="button">Submit Answers</button>
+    </div>
+
+    <div id="results" class="card">
+      <div class="result-card">
+        <div class="score-ring" id="scoreRing"><span id="scorePct">0%</span></div>
+        <div>
+          <h3 id="scoreText">Your Score</h3>
+          <p class="result-msg" id="bandMsg"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <small>&copy; <span id="year"></span> Humans + AI Quiz. Built with vanilla HTML/CSS/JS.</small>
+</footer>
+
+<script>
+  // ======== QUIZ DATA (replaced with final 5-question set) =========
+  const quizData = [
+    {
+      id: 1, type: "mcq",
+      prompt: "Which task is AI most reliable for?",
+      options: ["An empathy interview", "Analyzing large data sets", "Setting workplace policies", "Negotiating conflicts"],
+      correct: "Analyzing large data sets",
+      hint: "Think about scale and speed.",
+      explanation: "AI can rapidly find trends across huge datasets; humans interpret meaning and implications."
+    },
+    {
+      id: 2, type: "tf",
+      prompt: "Humans should always follow AI’s advice without question.",
+      options: ["True","False"],
+      correct: "False",
+      hint: "What role does human judgment play?",
+      explanation: "Human oversight provides ethics, context, and safety checks; AI outputs still require verification."
+    },
+    {
+      id: 3, type: "mcq",
+      prompt: "When drafting a report, where can AI best assist?",
+      options: ["Generating a first draft or summary", "Making final approval decisions", "Assigning team roles", "Deciding ethical trade-offs"],
+      correct: "Generating a first draft or summary",
+      hint: "Consider what saves the most time.",
+      explanation: "AI accelerates drafting and summarizing; humans refine accuracy, tone, and context."
+    },
+    {
+      id: 4, type: "tf",
+      prompt: "AI tools can help uncover bias, but humans must decide what is fair.",
+      options: ["True","False"],
+      correct: "True",
+      hint: "Who defines fairness?",
+      explanation: "AI can surface patterns; fairness judgments and accountability rest with people."
+    },
+    {
+      id: 5, type: "match",
+      prompt: "Match each activity to who should lead it.",
+      matchPairs: [
+        {left:"Summarizing news", rightOptions:["Human","AI","Both"], correct:"AI"},
+        {left:"Creating empathy-driven messaging", rightOptions:["Human","AI","Both"], correct:"Human"},
+        {left:"Verifying sources", rightOptions:["Human","AI","Both"], correct:"Both"}
+      ],
+      hint: "Consider logic and scale vs. empathy and context.",
+      explanation: "Best results: AI handles scale, humans handle tone and values, and both verify important facts."
+    }
+  ];
+
+  // ======== RENDERING ========
+  const $ = (sel, el=document) => el.querySelector(sel);
+  const $$ = (sel, el=document) => [...el.querySelectorAll(sel)];
+  const quizEl = $("#quiz");
+  const totalCountEl = $("#totalCount");
+  const progressCountEl = $("#progressCount");
+  const progressBar = $("#progressBar");
+  const resultsEl = $("#results");
+  const scoreRing = $("#scoreRing");
+  const scorePct = $("#scorePct");
+  const bandMsg = $("#bandMsg");
+
+  totalCountEl.textContent = quizData.length;
+
+  function render(){
+    quizEl.innerHTML = "";
+    quizData.forEach((q, idx) => {
+      const card = document.createElement("div");
+      card.className = "question";
+      card.setAttribute("data-id", q.id);
+
+      const title = document.createElement("p");
+      title.className = "q-title";
+      title.innerHTML = `<strong>Q${idx+1}.</strong> ${q.prompt}`;
+      card.appendChild(title);
+
+      // Render type
+      if(q.type === "mcq" || q.type === "tf"){
+        const wrap = document.createElement("div");
+        wrap.className = "options";
+        (q.options || []).forEach(opt => {
+          const id = `q${idx}-${cssSafe(opt)}`;
+          const label = document.createElement("label");
+          label.setAttribute("for", id);
+          label.innerHTML = `<input id="${id}" type="radio" name="q${idx}" value="${escapeHtml(opt)}"> ${escapeHtml(opt)}`;
+          wrap.appendChild(label);
+        });
+        card.appendChild(wrap);
+      }
+      else if(q.type === "match"){
+        (q.matchPairs || []).forEach((pair, j) => {
+          const row = document.createElement("div");
+          row.className = "match-row";
+          const left = document.createElement("div");
+          left.textContent = pair.left;
+          left.style.minWidth = "40%";
+          const sel = document.createElement("select");
+          sel.name = `q${idx}-m${j}`;
+          (pair.rightOptions || ["Human","AI","Both"]).forEach(opt => {
+            const op = document.createElement("option");
+            op.value = opt; op.textContent = opt;
+            sel.appendChild(op);
+          });
+          row.appendChild(left); row.appendChild(sel);
+          card.appendChild(row);
+        });
+      }
+
+      // Hint
+      const hintBtn = document.createElement("button");
+      hintBtn.className = "btn secondary hint-btn";
+      hintBtn.type = "button";
+      hintBtn.textContent = "Show Hint";
+      const hint = document.createElement("div");
+      hint.className = "hint";
+      hint.textContent = q.hint || "Consider the strengths of humans and AI.";
+      hintBtn.addEventListener("click", () => hint.style.display = "block");
+      card.appendChild(hintBtn);
+      card.appendChild(hint);
+
+      quizEl.appendChild(card);
+    });
+
+    updateProgress();
+  }
+
+  function cssSafe(s){ return String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-'); }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+  function updateProgress(){
+    const answered = getAnsweredCount();
+    progressCountEl.textContent = answered;
+    const pct = quizData.length ? Math.round(100 * answered / quizData.length) : 0;
+    progressBar.style.width = pct + "%";
+  }
+
+  function getAnsweredCount(){
+    let count = 0;
+    quizData.forEach((q, idx) => {
+      if(q.type === "mcq" || q.type === "tf"){
+        const checked = $(`input[name="q${idx}"]:checked`);
+        if(checked) count++;
+      } else if(q.type === "match"){
+        const pairs = (q.matchPairs || []);
+        const ok = pairs.every((_, j) => !!$(`select[name="q${idx}-m${j}"]`).value);
+        if(ok) count++;
+      }
+    });
+    return count;
+  }
+
+  function normalize(s){ return String(s).trim().toLowerCase(); }
+
+  function grade(){
+    let correct = 0;
+
+    quizData.forEach((q, idx) => {
+      if(q.type === "mcq" || q.type === "tf"){
+        const a = $(`input[name="q${idx}"]:checked`);
+        if(a && normalize(a.value) === normalize(q.correct)) correct++;
+      }
+      else if(q.type === "match"){
+        const pairs = (q.matchPairs || []);
+        const allRight = pairs.every((pair, j) => {
+          const sel = $(`select[name="q${idx}-m${j}"]`);
+          return normalize(sel.value) === normalize(pair.correct);
+        });
+        if(allRight) correct++;
+      }
+    });
+
+    const total = quizData.length;
+    const pct = total ? Math.round((correct/total)*100) : 0;
+    const band = (pct>=80) ? "Great collaboration awareness!"
+               : (pct>=50) ? "Good start—keep refining your human–AI judgment."
+               : "Let’s practice when to verify, escalate, or co-create.";
+
+    // Update UI
+    resultsEl.style.display = "block";
+    scoreRing.style.setProperty("--pct", pct);
+    scorePct.textContent = pct + "%";
+    $("#scoreText").textContent = `Your Score: ${correct}/${total}`;
+    bandMsg.textContent = band;
+
+    // Simple celebratory effect
+    confetti(pct >= 80 ? 60 : 20);
+  }
+
+  function confetti(n=30){
+    const frag = document.createDocumentFragment();
+    for(let i=0;i<n;i++){
+      const s = document.createElement("span");
+      const size = 6 + Math.random()*8;
+      s.style.position="fixed";
+      s.style.left = Math.random()*100 + "vw";
+      s.style.top = "-10px";
+      s.style.width = size+"px";
+      s.style.height = size+"px";
+      s.style.background = i%3===0? "var(--brand)" : i%3===1? "var(--brand-2)" : "var(--accent)";
+      s.style.borderRadius = "2px";
+      s.style.opacity = ".9";
+      s.style.transform = `rotate(${Math.random()*360}deg)`;
+      s.style.transition = `transform ${2+Math.random()*1.5}s linear, top ${2+Math.random()*1.5}s linear, opacity .3s ease`;
+      document.body.appendChild(s);
+      requestAnimationFrame(()=>{
+        s.style.top = 100 + "vh";
+        s.style.transform += ` translateY(${100+Math.random()*40}vh) rotate(${(Math.random()*720-360)}deg)`;
+      });
+      setTimeout(()=>s.remove(), 2800);
+    }
+  }
+
+  // Events
+  $("#submitBtn").addEventListener("click", grade);
+  $("#restartBtn").addEventListener("click", () => {
+    // Reset all inputs
+    $$("input[type=radio]").forEach(i=> i.checked=false);
+    $$("select").forEach(s=> s.selectedIndex=0);
+    $$(".hint").forEach(h=> h.style.display="none");
+    resultsEl.style.display="none";
+    updateProgress();
+    window.scrollTo({top:0, behavior:"smooth"});
+  });
+
+  document.addEventListener("change", (e)=>{
+    if(e.target.matches("input, select")) updateProgress();
+  });
+
+  // Misc
+  $("#year").textContent = new Date().getFullYear();
+
+  // Initial render
+  render();
+</script>
+
+</body>
+</html>
