@@ -34,6 +34,7 @@
                  var(--bg);
     color:var(--text); font: 16px/1.6 system-ui, -apple-system, Segoe UI, Roboto, Arial, Noto Sans, "Apple Color Emoji","Segoe UI Emoji";
     min-height:100dvh;
+    -webkit-text-size-adjust: 100%;
   }
 
   /* Header */
@@ -103,9 +104,7 @@
     50%{ top:calc(100% - 8px); opacity:.6 }
     100%{ top:8px; opacity:.9 }
   }
-  .lock{
-    width:120px; height:120px;
-  }
+  .lock{ width:120px; height:120px; }
   .lock .shackle{ transform-origin: 50% 15%; transition: transform .4s ease; }
   .lock.open .shackle{ transform: rotate(-26deg) translateX(6px) translateY(-2px); }
   .mission-steps{margin:0; padding-left:18px}
@@ -150,7 +149,7 @@
   .options label.correct{border-color: var(--success); background: rgba(52,211,153,.12)}
   .options label.wrong{border-color: var(--danger); background: rgba(248,113,113,.12)}
 
-  /* Matching (improved alignment) */
+  /* Matching (alignment + mobile-friendly) */
   .match-row{
     display:grid;
     grid-template-columns: minmax(260px, 1.2fr) 1fr;
@@ -160,6 +159,7 @@
   }
   .match-left{
     line-height:1.35;
+    word-break: break-word;
   }
   .match-right select{
     width:100%;
@@ -172,6 +172,21 @@
   .match-row.correct select{border-color: var(--success); background: rgba(52,211,153,.12)}
   .match-row.wrong select{border-color: var(--danger); background: rgba(248,113,113,.12)}
 
+  /* Small screens: stack prompt over dropdown, bigger tap target, prevent iOS zoom */
+  @media (max-width: 560px){
+    .match-row{
+      grid-template-columns: 1fr;
+      gap:8px;
+    }
+    .match-left{ margin-bottom:2px; }
+    .match-right select{
+      font-size:16px;      /* prevents iOS zoom on focus */
+      min-height:44px;     /* comfortable tap target */
+      width:100%;
+    }
+    .question{ padding:16px; }
+  }
+
   /* Hint & Explanation */
   .hint, .explanation {display:none; margin-top:10px; padding:10px 12px; border-left:4px solid var(--accent); background: rgba(245,158,11,.10); border-radius:8px}
   .feedback{display:none; margin-top:10px; padding:10px 12px; border-left:4px solid var(--brand); background: rgba(96,165,250,.10); border-radius:8px; font-weight:700}
@@ -181,7 +196,7 @@
   .result-card{display:grid; grid-template-columns: 160px 1fr; gap:18px; align-items:center; padding:22px}
   @media (max-width:640px){ .result-card{grid-template-columns:1fr} }
   .score-ring{
-    --pct: 0; /* 0..100 */
+    --pct: 0;
     width: 160px; height:160px; border-radius:50%;
     background:
       radial-gradient(closest-side, var(--card) 80%, transparent 81% 100%),
@@ -222,7 +237,6 @@
 <header class="hero" aria-label="Header">
   <div class="hero__inner">
     <div class="hero__logo">
-      <!-- Replace SVG with your logo -->
       <img src="cuny-logo-png.png" alt="CUNY logo" width="84" height="84" />
     </div>
     <div class="hero__text">
@@ -241,7 +255,6 @@
     <div class="mission-grid">
       <div class="scanner">
         <div class="scan-line"></div>
-        <!-- Lock SVG -->
         <svg class="lock" viewBox="0 0 120 120" role="img" aria-label="Locked padlock">
           <g class="shackle" id="shackle">
             <path d="M40 40 a20 20 0 1 1 40 0 v14" fill="none" stroke="url(#grad)" stroke-width="8" stroke-linecap="round"/>
@@ -341,9 +354,9 @@
       id: 3, type: "match",
       prompt: "Match each task to who should lead it.",
       matchPairs: [
-        {left:"Spot anomalies in 50,000 transactions", rightOptions:["Choose one", "Human","AI","Both"], correct:"AI"},
-        {left:"Decide on a refund for an angry customer", rightOptions:["Choose one", "Human","AI","Both"], correct:"Human"},
-        {left:"Double-check facts using different tools before publishing.", rightOptions:["Choose one", "Human","AI","Both"], correct:"Both"}
+        {left:"Spot anomalies in 50,000 transactions", rightOptions:["Choose one","Human","AI","Both"], correct:"AI"},
+        {left:"Decide on a refund for an angry customer", rightOptions:["Choose one","Human","AI","Both"], correct:"Human"},
+        {left:"Double-check facts using different tools before publishing", rightOptions:["Choose one","Human","AI","Both"], correct:"Both"}
       ],
       hint: "Consider judgment vs. scale.",
       explanation: "AI scans large datasets; humans apply judgment for customer outcomes; both share verification."
@@ -388,7 +401,7 @@
       matchPairs: [
         {left:"Offer a rough translation of a simple email", rightOptions:["Choose one","Human","AI","Both"], correct:"AI"},
         {left:"Provide a medical diagnosis", rightOptions:["Choose one","Human","AI","Both"], correct:"Human"},
-        {left:"Brainstorm multiple solutions, then select the best one.", rightOptions:["Choose one","Human","AI","Both"], correct:"Both"}
+        {left:"Brainstorm multiple solutions, then select the best one", rightOptions:["Choose one","Human","AI","Both"], correct:"Both"}
       ],
       hint: "Safety-critical vs. low-risk tasks.",
       explanation: "AI is fine for low-risk drafting; humans lead in high-stakes calls; collaboration shines for option-generation + judgment."
@@ -572,7 +585,6 @@
         if(wrongLabel) wrongLabel.classList.add("wrong");
       }
 
-      // lock options
       $$(`input[name="q${current}"]`).forEach(i => i.disabled = true);
     } else if(q.type === "match"){
       const pairs = (q.matchPairs || []);
@@ -595,8 +607,7 @@
 
     if(correctNow){
       score++;
-      keys++; // award a key for each correctly answered question
-      // open the lock when enough keys
+      keys++;
       if(keys >= 6){
         const lock = document.querySelector(".lock");
         if(lock){
@@ -606,7 +617,6 @@
       }
     }
 
-    // Show feedback + explanation + toggle buttons
     const fb = document.getElementById("feedbackBox");
     fb.style.display = "block";
     fb.textContent = correctNow ? "✅ Correct! You found a key 🔑" : `❌ Not quite. Correct answer: ${correctText}`;
@@ -618,7 +628,6 @@
     nextBtn.style.display = "inline-block";
     nextBtn.textContent = (current === total-1) ? "See Results" : "Next Question";
 
-    // Update live score + keys
     updateProgress();
   }
 
@@ -649,7 +658,6 @@
     $("#scoreText").textContent = `Your Score: ${score}/${total} • Keys: ${keys}/6`;
     bandMsg.textContent = band;
 
-    // Show Mission Accomplished banner when escaped
     const missionComplete = document.getElementById("missionComplete");
     if(missionComplete){
       missionComplete.style.display = (escaped ? "grid" : "none");
@@ -688,7 +696,6 @@
   document.getElementById("nextBtn").addEventListener("click", nextStep);
   document.getElementById("restartBtn").addEventListener("click", () => location.reload());
 
-  // Initialize year
   document.getElementById("year").textContent = new Date().getFullYear();
 </script>
 
