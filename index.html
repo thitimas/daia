@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Humans + AI: Who Does What? — Quiz</title>
+<title>Humans + AI: Escape the Human + AI Vault — Challenge</title>
 
 <style>
   :root{
@@ -65,8 +65,60 @@
     color:var(--muted); font-size:12px; background:rgba(255,255,255,.02)
   }
 
+  /* Mission Screen */
+  .mission{
+    max-width:980px; margin:24px auto; padding:0 16px; 
+  }
+  .mission-card{
+    position: relative;
+    background:linear-gradient(180deg, rgba(255,255,255,.02), transparent 60%), var(--card);
+    border:1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding:22px; overflow:hidden;
+  }
+  .mission-card:before{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background: repeating-linear-gradient(
+      90deg,
+      rgba(96,165,250,.06) 0, rgba(96,165,250,.06) 2px,
+      transparent 2px, transparent 6px
+    );
+    opacity:.6;
+  }
+  .mission-title{margin:0 0 4px; font-size: clamp(20px, 3.5vw, 28px);}
+  .mission-sub{margin:0 0 16px; color:var(--muted)}
+  .mission-grid{display:grid; grid-template-columns: 1fr; gap:16px}
+  @media (min-width:760px){
+    .mission-grid{grid-template-columns: 1.1fr .9fr}
+  }
+  .scanner{
+    border:1px solid var(--border); border-radius:14px; padding:16px; background: rgba(255,255,255,.03);
+    position:relative; overflow:hidden; min-height:180px; display:grid; place-items:center; text-align:center;
+  }
+  .scan-line{
+    position:absolute; left:0; right:0; height:2px; background: linear-gradient(90deg, var(--brand), var(--brand-2));
+    animation: scan 2.4s linear infinite;
+  }
+  @keyframes scan{
+    0%{ top:8px; opacity:.9 }
+    50%{ top:calc(100% - 8px); opacity:.6 }
+    100%{ top:8px; opacity:.9 }
+  }
+  .lock{
+    width:120px; height:120px;
+  }
+  .lock .shackle{ transform-origin: 50% 15%; transition: transform .4s ease; }
+  .lock.open .shackle{ transform: rotate(-26deg) translateX(6px) translateY(-2px); }
+  .mission-steps{margin:0; padding-left:18px}
+  .mission-steps li{margin:6px 0}
+  .mission-actions{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap}
+  .btn{
+    appearance:none; border:none; border-radius:12px; padding:12px 16px; cursor:pointer; color:#0b1222; font-weight:700;
+    background:linear-gradient(90deg, var(--brand), var(--brand-2)); box-shadow: var(--shadow);
+  }
+  .btn.secondary{background:transparent; color:var(--text); border:1px solid var(--border); box-shadow:none}
+
   /* Shell */
-  .wrap{max-width:980px; margin:26px auto; padding:0 16px}
+  .wrap{max-width:980px; margin:26px auto; padding:0 16px; display:none}
   .card{
     background:linear-gradient(180deg, rgba(255,255,255,.02), transparent 60%), var(--card);
     border:1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
@@ -87,6 +139,7 @@
   }
   .progress__count{font-variant-numeric:tabular-nums; color:var(--muted)}
   .score_now{margin-left:auto; color:var(--muted)}
+  .keys_now{margin-left:8px; color:var(--muted)}
 
   /* Question */
   .question{padding:18px; border:1px solid var(--border); border-radius:14px; margin-bottom:14px; background: rgba(255,255,255,.015)}
@@ -96,22 +149,32 @@
   .options input{margin-right:8px}
   .options label.correct{border-color: var(--success); background: rgba(52,211,153,.12)}
   .options label.wrong{border-color: var(--danger); background: rgba(248,113,113,.12)}
-  .match-row{display:flex; gap:10px; margin-bottom:8px}
-  .match-row select{flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:transparent; color:var(--text)}
+
+  /* Matching (improved alignment) */
+  .match-row{
+    display:grid;
+    grid-template-columns: minmax(260px, 1.2fr) 1fr;
+    gap:12px;
+    align-items:center;
+    margin-bottom:10px;
+  }
+  .match-left{
+    line-height:1.35;
+  }
+  .match-right select{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:transparent;
+    color:var(--text);
+  }
   .match-row.correct select{border-color: var(--success); background: rgba(52,211,153,.12)}
   .match-row.wrong select{border-color: var(--danger); background: rgba(248,113,113,.12)}
 
   /* Hint & Explanation */
   .hint, .explanation {display:none; margin-top:10px; padding:10px 12px; border-left:4px solid var(--accent); background: rgba(245,158,11,.10); border-radius:8px}
   .feedback{display:none; margin-top:10px; padding:10px 12px; border-left:4px solid var(--brand); background: rgba(96,165,250,.10); border-radius:8px; font-weight:700}
-
-  /* Buttons */
-  .btn{
-    appearance:none; border:none; border-radius:12px; padding:12px 16px; cursor:pointer; color:#0b1222; font-weight:700;
-    background:linear-gradient(90deg, var(--brand), var(--brand-2)); box-shadow: var(--shadow);
-  }
-  .btn.secondary{background:transparent; color:var(--text); border:1px solid var(--border); box-shadow:none}
-  .actions{display:flex; gap:10px; justify-content:space-between; margin-top:18px; flex-wrap:wrap}
 
   /* Results */
   #results{display:none; margin-top:18px; padding:0}
@@ -128,45 +191,103 @@
   .score-ring span{font-size:28px; font-weight:800}
   .result-msg{margin:0; color:var(--muted)}
 
+  /* Mission Accomplished banner */
+  .mission-complete{
+    margin: 14px 0 6px;
+    display:grid;
+    place-items:center;
+    padding: 22px;
+    border:1px solid var(--border);
+    border-radius: var(--radius);
+    background: linear-gradient(180deg, rgba(255,255,255,.03), transparent 70%), var(--card);
+    box-shadow: var(--shadow);
+  }
+  .mission-complete span{
+    font-size: clamp(22px, 4vw, 34px);
+    font-weight: 900;
+    letter-spacing:.5px;
+    background: linear-gradient(90deg, var(--brand), var(--brand-2), var(--accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-align:center;
+  }
+
   /* Footer */
   footer{margin:30px auto; max-width:980px; color:var(--muted); text-align:center; padding:12px}
 </style>
 </head>
 <body>
 
-<header class="hero" aria-label="Quiz Header">
+<header class="hero" aria-label="Header">
   <div class="hero__inner">
-    <div class="hero__logo" aria-hidden="true">
-      <!-- Replace with your logo if desired -->
-      <svg width="60" height="60" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.88L18.18 22 12 18.77 5.82 22 7 14.15 2 9.27l6.91-1.01L12 2z" stroke="#60a5fa" stroke-width="1.25"/>
-        <circle cx="12" cy="12" r="3.5" stroke="#22d3ee" stroke-width="1.25"/>
-      </svg>
+    <div class="hero__logo">
+      <!-- Replace SVG with your logo -->
+      <img src="cuny-logo-png.png" alt="CUNY logo" width="84" height="84" />
     </div>
     <div class="hero__text">
       <span class="eyebrow">Don’t AI Alone</span>
-      <h1>Humans + AI: Who Does What?</h1>
-      <p class="tagline">A quick, playful quiz about collaboration, judgment, and when to verify.</p>
-      <div class="hero__badges">
-        <!-- <span class="badge">One-by-one flow</span>
-        <span class="badge">Immediate feedback</span>
-        <span class="badge">Runs offline</span> -->
-      </div>
+      <h1>Escape the Human + AI Vault</h1>
+      <p class="tagline">Solve puzzles to unlock the exit. Collect keys by answering questions about when humans and AI work best together.</p>
     </div>
   </div>
 </header>
 
-<main class="wrap">
+<!-- ======= MISSION PAGE ======= -->
+<section class="mission" id="mission">
+  <div class="mission-card">
+    <h2 class="mission-title">🎯 Mission Briefing</h2>
+    <p class="mission-sub">You wake in a sealed vault. The only way out: prove you can collaborate with AI wisely.</p>
+    <div class="mission-grid">
+      <div class="scanner">
+        <div class="scan-line"></div>
+        <!-- Lock SVG -->
+        <svg class="lock" viewBox="0 0 120 120" role="img" aria-label="Locked padlock">
+          <g class="shackle" id="shackle">
+            <path d="M40 40 a20 20 0 1 1 40 0 v14" fill="none" stroke="url(#grad)" stroke-width="8" stroke-linecap="round"/>
+          </g>
+          <rect x="28" y="50" rx="10" ry="10" width="64" height="54" fill="none" stroke="url(#grad)" stroke-width="8"/>
+          <circle cx="60" cy="77" r="7" fill="none" stroke="url(#grad)" stroke-width="6"/>
+          <defs>
+            <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#60a5fa"/>
+              <stop offset="100%" stop-color="#22d3ee"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <p style="margin:10px 0 0; color:var(--muted)">Vault Lock Status: <strong id="lockStatus">Locked</strong></p>
+      </div>
+      <div>
+        <ol class="mission-steps">
+          <li>Answer questions one-by-one. Each correct answer earns a 🔑 key.</li>
+          <li>Gather <strong>6 keys</strong> to crack the exit lock.</li>
+          <li>Use hints wisely; verify like a pro. Remember: <em>Don’t AI Alone.</em></li>
+        </ol>
+        <div class="mission-actions">
+          <button id="beginBtn" class="btn" type="button">Begin Mission</button>
+          <button id="howBtn" class="btn secondary" type="button">How it works</button>
+        </div>
+        <div id="howBox" style="display:none; margin-top:8px; color:var(--muted)">
+          You’ll see multiple-choice, true/false, and matching prompts. Click <em>Check Answer</em> for instant feedback. Earn enough keys to “unlock” the padlock and reveal the exit.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======= QUIZ PAGE ======= -->
+<main class="wrap" id="quizWrap">
   <section class="card" aria-labelledby="quiz-title">
     <div class="progress" role="status" aria-live="polite">
       <div class="progress__bar" aria-hidden="true"><span id="progressBar"></span></div>
       <div class="progress__count">
         <span id="progressCount">0</span>/<span id="totalCount">0</span>
         <span class="score_now">Score: <strong id="scoreNow">0</strong></span>
+        <span class="keys_now">Keys: <strong id="keysNow">0</strong> 🔑</span>
       </div>
     </div>
 
-    <h2 id="quiz-title" class="visually-hidden">Quiz</h2>
+    <h2 id="quiz-title" class="visually-hidden">Challenge</h2>
     <div id="quiz"></div>
 
     <div class="actions">
@@ -186,6 +307,9 @@
           <p class="result-msg" id="bandMsg"></p>
         </div>
       </div>
+      <div id="missionComplete" class="mission-complete" style="display:none">
+        <span>🎉 Mission Accomplished — You Escaped the Human + AI Vault! 🎉</span>
+      </div>
     </div>
   </section>
 </main>
@@ -195,7 +319,7 @@
 </footer>
 
 <script>
-  // ======== QUIZ DATA (replace/extend; mcq/tf/match only) =========
+  // ======== QUIZ DATA (mcq/tf/match only) =========
   const quizData = [
     {
       id: 1, type: "mcq",
@@ -217,9 +341,9 @@
       id: 3, type: "match",
       prompt: "Match each task to who should lead it.",
       matchPairs: [
-        {left:"Spot anomalies in 50,000 transactions", rightOptions:["Human","AI","Both"], correct:"AI"},
-        {left:"Decide on a refund for an angry customer", rightOptions:["Human","AI","Both"], correct:"Human"},
-        {left:"Check key facts before publishing", rightOptions:["Human","AI","Both"], correct:"Both"}
+        {left:"Spot anomalies in 50,000 transactions", rightOptions:["Choose one", "Human","AI","Both"], correct:"AI"},
+        {left:"Decide on a refund for an angry customer", rightOptions:["Choose one", "Human","AI","Both"], correct:"Human"},
+        {left:"Double-check facts using different tools before publishing.", rightOptions:["Choose one", "Human","AI","Both"], correct:"Both"}
       ],
       hint: "Consider judgment vs. scale.",
       explanation: "AI scans large datasets; humans apply judgment for customer outcomes; both share verification."
@@ -262,9 +386,9 @@
       id: 7, type: "match",
       prompt: "Match the scenario to who should lead.",
       matchPairs: [
-        {left:"Offer a rough translation of a simple email", rightOptions:["Human","AI","Both"], correct:"AI"},
-        {left:"Provide a medical diagnosis", rightOptions:["Human","AI","Both"], correct:"Human"},
-        {left:"Generate options, human chooses", rightOptions:["Human","AI","Both"], correct:"Both"}
+        {left:"Offer a rough translation of a simple email", rightOptions:["Choose one","Human","AI","Both"], correct:"AI"},
+        {left:"Provide a medical diagnosis", rightOptions:["Choose one","Human","AI","Both"], correct:"Human"},
+        {left:"Brainstorm multiple solutions, then select the best one.", rightOptions:["Choose one","Human","AI","Both"], correct:"Both"}
       ],
       hint: "Safety-critical vs. low-risk tasks.",
       explanation: "AI is fine for low-risk drafting; humans lead in high-stakes calls; collaboration shines for option-generation + judgment."
@@ -282,6 +406,7 @@
   // ======== STATE ========
   let current = 0;
   let score = 0;
+  let keys = 0;        // 🔑 keys collected
   const total = quizData.length;
 
   // ======== HELPERS ========
@@ -291,11 +416,14 @@
   function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
   // ======== ELEMENTS ========
+  const quizWrap = $("#quizWrap");
+  const mission = $("#mission");
   const quizEl = $("#quiz");
   const totalCountEl = $("#totalCount");
   const progressCountEl = $("#progressCount");
   const progressBar = $("#progressBar");
   const scoreNowEl = $("#scoreNow");
+  const keysNowEl = $("#keysNow");
   const hintBtn = $("#hintBtn");
   const checkBtn = $("#checkBtn");
   const nextBtn = $("#nextBtn");
@@ -304,9 +432,24 @@
   const scoreRing = $("#scoreRing");
   const scorePct = $("#scorePct");
   const bandMsg = $("#bandMsg");
+  const shackle = $("#shackle");
+  const lockStatus = $("#lockStatus");
+  const beginBtn = $("#beginBtn");
+  const howBtn = $("#howBtn");
+  const howBox = $("#howBox");
 
-  totalCountEl.textContent = total;
   $("#year").textContent = new Date().getFullYear();
+
+  // ======== MISSION EVENTS ========
+  howBtn.addEventListener("click", ()=>{
+    howBox.style.display = (howBox.style.display === "none") ? "block" : "none";
+  });
+  beginBtn.addEventListener("click", ()=>{
+    mission.style.display = "none";
+    quizWrap.style.display = "block";
+    renderQuestion();
+    updateProgress();
+  });
 
   // ======== RENDER ONE QUESTION ========
   function renderQuestion(){
@@ -337,9 +480,14 @@
       (q.matchPairs || []).forEach((pair, j) => {
         const row = document.createElement("div");
         row.className = "match-row";
+
         const left = document.createElement("div");
+        left.className = "match-left";
         left.textContent = pair.left;
-        left.style.minWidth = "40%";
+
+        const right = document.createElement("div");
+        right.className = "match-right";
+
         const sel = document.createElement("select");
         sel.name = `q${current}-m${j}`;
         (pair.rightOptions || ["Human","AI","Both"]).forEach(opt => {
@@ -347,7 +495,10 @@
           op.value = opt; op.textContent = opt;
           sel.appendChild(op);
         });
-        row.appendChild(left); row.appendChild(sel);
+        right.appendChild(sel);
+
+        row.appendChild(left);
+        row.appendChild(right);
         card.appendChild(row);
       });
     }
@@ -385,17 +536,19 @@
 
   // ======== PROGRESS ========
   function updateProgress(){
-    progressCountEl.textContent = current;
+    totalCountEl && (totalCountEl.textContent = total);
+    progressCountEl && (progressCountEl.textContent = current);
     const pct = total ? Math.round(100 * current / total) : 0;
-    progressBar.style.width = pct + "%";
-    scoreNowEl.textContent = score;
+    progressBar && (progressBar.style.width = pct + "%");
+    scoreNowEl && (scoreNowEl.textContent = score);
+    keysNowEl && (keysNowEl.textContent = keys);
   }
 
   // ======== CHECK ANSWER WITH FEEDBACK ========
   function checkAnswer(){
     const q = quizData[current];
     let correctNow = false;
-       let correctText = "";
+    let correctText = "";
 
     if(q.type === "mcq" || q.type === "tf"){
       const selected = document.querySelector(`input[name="q${current}"]:checked`);
@@ -440,12 +593,23 @@
       correctNow = allRight;
     }
 
-    if(correctNow) score++;
+    if(correctNow){
+      score++;
+      keys++; // award a key for each correctly answered question
+      // open the lock when enough keys
+      if(keys >= 6){
+        const lock = document.querySelector(".lock");
+        if(lock){
+          lock.classList.add("open");
+          lockStatus.textContent = "Unlocked";
+        }
+      }
+    }
 
     // Show feedback + explanation + toggle buttons
     const fb = document.getElementById("feedbackBox");
     fb.style.display = "block";
-    fb.textContent = correctNow ? "✅ Correct!" : `❌ Not quite. Correct answer: ${correctText}`;
+    fb.textContent = correctNow ? "✅ Correct! You found a key 🔑" : `❌ Not quite. Correct answer: ${correctText}`;
 
     const exp = document.getElementById("explainBox");
     exp.style.display = "block";
@@ -454,7 +618,7 @@
     nextBtn.style.display = "inline-block";
     nextBtn.textContent = (current === total-1) ? "See Results" : "Next Question";
 
-    // Update live score
+    // Update live score + keys
     updateProgress();
   }
 
@@ -475,14 +639,21 @@
     resultsEl.style.display = "block";
 
     const pct = total ? Math.round((score/total)*100) : 0;
-    const band = (pct>=80) ? "Great collaboration awareness!"
-               : (pct>=50) ? "Good start—keep refining your human–AI judgment."
-               : "Let’s practice when to verify, escalate, or co-create.";
+    const escaped = keys >= 6;
+    const band = escaped
+      ? "🔓 The door slides open — you’ve escaped the Human + AI Vault!"
+      : "🔒 So close! Gather 6 keys to unlock the exit. Try again and trust—but verify.";
 
     scoreRing.style.setProperty("--pct", pct);
     scorePct.textContent = pct + "%";
-    $("#scoreText").textContent = `Your Score: ${score}/${total}`;
+    $("#scoreText").textContent = `Your Score: ${score}/${total} • Keys: ${keys}/6`;
     bandMsg.textContent = band;
+
+    // Show Mission Accomplished banner when escaped
+    const missionComplete = document.getElementById("missionComplete");
+    if(missionComplete){
+      missionComplete.style.display = (escaped ? "grid" : "none");
+    }
 
     confetti(pct >= 80 ? 60 : 20);
   }
@@ -517,10 +688,8 @@
   document.getElementById("nextBtn").addEventListener("click", nextStep);
   document.getElementById("restartBtn").addEventListener("click", () => location.reload());
 
-  // Start
-  document.getElementById("totalCount").textContent = total;
+  // Initialize year
   document.getElementById("year").textContent = new Date().getFullYear();
-  renderQuestion();
 </script>
 
 </body>
