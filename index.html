@@ -318,6 +318,7 @@
         <div>
           <h3 id="scoreText">Your Score</h3>
           <p class="result-msg" id="bandMsg"></p>
+          <h2 class="result-msg" id="timeMsg"></h2>
         </div>
       </div>
       <div id="missionComplete" class="mission-complete" style="display:none">
@@ -332,7 +333,7 @@
 </footer>
 
 <script>
-  // ======== QUIZ DATA (mcq/tf/match only) =========
+  // ======== QUIZ DATA (6 questions: removed previous Q6 & Q7) =========
   const quizData = [
     {
       id: 1, type: "mcq",
@@ -383,30 +384,6 @@
       explanation: "Public tools may retain or learn from data; follow privacy rules and use approved channels."
     },
     {
-      id: 6, type: "mcq",
-      prompt: "Which prompt is most likely to get a useful result?",
-      options: [
-        "You are a project assistant. Goal: draft a 200-word summary for non-experts. Use bullet points, cite 2 sources, neutral tone.",
-        "Summarize this.",
-        "Write something good.",
-        "Give me info quickly."
-      ],
-      correct: "You are a project assistant. Goal: draft a 200-word summary for non-experts. Use bullet points, cite 2 sources, neutral tone.",
-      hint: "Context + goal + format = better output.",
-      explanation: "Clear role, audience, constraints, and format guide the model and reduce rework."
-    },
-    {
-      id: 7, type: "match",
-      prompt: "Match the scenario to who should lead.",
-      matchPairs: [
-        {left:"Offer a rough translation of a simple email", rightOptions:["Choose one","Human","AI","Both"], correct:"AI"},
-        {left:"Provide a medical diagnosis", rightOptions:["Choose one","Human","AI","Both"], correct:"Human"},
-        {left:"Brainstorm multiple solutions, then select the best one", rightOptions:["Choose one","Human","AI","Both"], correct:"Both"}
-      ],
-      hint: "Safety-critical vs. low-risk tasks.",
-      explanation: "AI is fine for low-risk drafting; humans lead in high-stakes calls; collaboration shines for option-generation + judgment."
-    },
-    {
       id: 8, type: "tf",
       prompt: "“AI hallucinations” means the system may produce invented facts that sound plausible.",
       options: ["True","False"],
@@ -421,6 +398,10 @@
   let score = 0;
   let keys = 0;        // 🔑 keys collected
   const total = quizData.length;
+
+  // ======== TIMER ========
+  let startTime = 0;
+  let endTime = 0;
 
   // ======== HELPERS ========
   const $ = (sel, el=document) => el.querySelector(sel);
@@ -445,6 +426,7 @@
   const scoreRing = $("#scoreRing");
   const scorePct = $("#scorePct");
   const bandMsg = $("#bandMsg");
+  const timeMsg = $("#timeMsg");
   const shackle = $("#shackle");
   const lockStatus = $("#lockStatus");
   const beginBtn = $("#beginBtn");
@@ -460,6 +442,7 @@
   beginBtn.addEventListener("click", ()=>{
     mission.style.display = "none";
     quizWrap.style.display = "block";
+    startTime = Date.now(); // start timer
     renderQuestion();
     updateProgress();
   });
@@ -585,6 +568,7 @@
         if(wrongLabel) wrongLabel.classList.add("wrong");
       }
 
+      // lock options
       $$(`input[name="q${current}"]`).forEach(i => i.disabled = true);
     } else if(q.type === "match"){
       const pairs = (q.matchPairs || []);
@@ -607,7 +591,8 @@
 
     if(correctNow){
       score++;
-      keys++;
+      keys++; // award a key for each correctly answered question
+      // open the lock when enough keys
       if(keys >= 6){
         const lock = document.querySelector(".lock");
         if(lock){
@@ -617,6 +602,7 @@
       }
     }
 
+    // Show feedback + explanation + toggle buttons
     const fb = document.getElementById("feedbackBox");
     fb.style.display = "block";
     fb.textContent = correctNow ? "✅ Correct! You found a key 🔑" : `❌ Not quite. Correct answer: ${correctText}`;
@@ -628,6 +614,7 @@
     nextBtn.style.display = "inline-block";
     nextBtn.textContent = (current === total-1) ? "See Results" : "Next Question";
 
+    // Update live score + keys
     updateProgress();
   }
 
@@ -637,12 +624,20 @@
       current++;
       renderQuestion();
     }else{
+      current++;
       showResults();
     }
   }
 
   // ======== RESULTS ========
   function showResults(){
+    updateProgress();
+    endTime = Date.now(); // stop timer
+    const totalMs = Math.max(0, endTime - startTime);
+    const mins = Math.floor(totalMs / 60000);
+    const secs = Math.floor((totalMs % 60000) / 1000);
+    const timeTaken = `${mins}m ${secs}s`;
+
     quizEl.innerHTML = "";
     $(".actions").style.display = "none";
     resultsEl.style.display = "block";
@@ -657,7 +652,9 @@
     scorePct.textContent = pct + "%";
     $("#scoreText").textContent = `Your Score: ${score}/${total} • Keys: ${keys}/6`;
     bandMsg.textContent = band;
+    timeMsg.textContent = `⏱️ Time Taken: ${timeTaken}`;
 
+    // Show Mission Accomplished banner when escaped
     const missionComplete = document.getElementById("missionComplete");
     if(missionComplete){
       missionComplete.style.display = (escaped ? "grid" : "none");
@@ -696,6 +693,7 @@
   document.getElementById("nextBtn").addEventListener("click", nextStep);
   document.getElementById("restartBtn").addEventListener("click", () => location.reload());
 
+  // Initialize year
   document.getElementById("year").textContent = new Date().getFullYear();
 </script>
 
